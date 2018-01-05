@@ -1,0 +1,32 @@
+{
+  "name": "binance-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "eslintConfig": {
+    "root": true,
+    "extends": "standard",
+    "env": {
+      "node": true,
+      "es6": true
+    }
+  },
+  "devDependencies": {
+    "eslint": "^4.5.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1"
+  },
+  "dependencies": {
+    "chalk": "^2.3.0",
+    "clear": "0.0.1",
+    "cli-table2": "^0.2.0",
+    "inquirer": "^4.0.2",
+    "node-binance-api": "^0.3.0"
+  }
+}
