@@ -20,8 +20,12 @@ let prices = {}
 const getPrices = promisify(binance.prices)
 const getBalances = promisify(binance.balance)
 
-const getValueIn = baseSymbol => (symbol, n = 1) =>
-  n * (symbol === baseSymbol ? 1 : parseFloat(prices[`${symbol}${baseSymbol}`]))
+const getValueIn = baseSymbol => (symbol, n = 1) => {
+  return (
+    n *
+    (symbol === baseSymbol ? 1 : parseFloat(prices[`${symbol}${baseSymbol}`]))
+  )
+}
 
 const getValueInBTC = getValueIn('BTC')
 const getValueInETH = getValueIn('ETH')
@@ -36,37 +40,55 @@ module.exports = {
   },
   showBalances: async () => {
     prices = await getPrices()
+    console.log(prices)
+    let totalBTC = 0
 
     const allBalances = await getBalances()
 
-    const relevantBalances = Object.keys(allBalances).reduce((acc, symbol) => {
-      const availableFunds = parseFloat(allBalances[symbol].available)
-      if (availableFunds > 0) {
-        const valueInBTC = getValueInBTC(symbol, allBalances[symbol].available)
-        const valueInETH = getValueInETH(symbol, allBalances[symbol].available)
+    const relevantBalances = Object.keys(allBalances)
+      .reduce((acc, symbol) => {
+        const availableFunds = parseFloat(allBalances[symbol].available)
+        if (availableFunds > 0) {
+          let valueInBTC = getValueInBTC(symbol, allBalances[symbol].available)
+          let valueInETH = getValueInETH(symbol, allBalances[symbol].available)
+          let valueInUSD = getValueInUSDT('BTC', valueInBTC)
 
-        const valueInUSD = getValueInUSDT('BTC', valueInBTC)
-        acc[symbol] = {
-          valueInBTC,
-          valueInETH,
-          valueInUSD,
-          ...allBalances[symbol]
+          if (!isNaN(valueInBTC)) {
+            totalBTC += valueInBTC
+          }
+
+          acc.push({
+            symbol,
+            valueInBTC,
+            valueInETH,
+            valueInUSD,
+            ...allBalances[symbol]
+          })
         }
-      }
-      return acc
-    }, {})
+        return acc
+      }, [])
+      .sort((a, b) => {
+        return b.valueInBTC - a.valueInBTC
+      })
+
     const table = new Table({
       head: ['Symbol', 'Balance', 'Value In BTC', 'Value in USD']
     })
-    for (const symbol of Object.keys(relevantBalances)) {
-      const info = relevantBalances[symbol]
+
+    for (const coin of relevantBalances) {
       table.push([
-        chalk.blue(symbol),
-        `${info.available} ${symbol}`,
-        `${info.valueInBTC} Ƀ`,
-        `${info.valueInUSD} $`
+        chalk.green(coin.symbol),
+        `${coin.available} ${coin.symbol}`,
+        `${coin.valueInBTC} Ƀ`,
+        `${coin.valueInUSD} $`
       ])
     }
+    table.push([
+      chalk.blue('Total'),
+      '',
+      `${totalBTC} Ƀ`,
+      `${getValueInUSDT('BTC', totalBTC)} $`
+    ])
     console.log(table.toString())
   }
 }
