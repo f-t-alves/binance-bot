@@ -1,84 +1,75 @@
 const util = require('util')
-const binance = require('node-binance-api')
+const Binance = require('binance-api-node').default
 const chalk = require('chalk')
 const Table = require('cli-table2')
 const config = require('../config.json')
 
-const promisify = method => {
-  method[util.promisify.custom] = pricesCallback => {
-    return new Promise((resolve, reject) => {
-      try {
-        method(prices => resolve(prices))
-      } catch (ex) {
-        reject(ex)
-      }
-    })
-  }
-  return util.promisify(method)
-}
 let prices = {}
-const getPrices = promisify(binance.prices)
-const getBalances = promisify(binance.balance)
+let binance = null
 
 const getValueIn = baseSymbol => (symbol, n = 1) => {
-  return (
-    n *
-    (symbol === baseSymbol ? 1 : parseFloat(prices[`${symbol}${baseSymbol}`]))
-  )
+  if (symbol === baseSymbol) return parseFloat(n)
+  if (prices[`${symbol}${baseSymbol}`]) {
+    return n * parseFloat(prices[`${symbol}${baseSymbol}`])
+  }
+  if (prices[`${baseSymbol}${symbol}`]) {
+    return n * 1 / parseFloat(prices[`${baseSymbol}${symbol}`])
+  }
+  return 0
 }
 
 const getValueInBTC = getValueIn('BTC')
 const getValueInETH = getValueIn('ETH')
 const getValueInUSDT = getValueIn('USDT')
-
 module.exports = {
   init () {
-    binance.options({
-      APIKEY: config.APIKEY,
-      APISECRET: config.APISECRET
+    binance = Binance({
+      apiKey: config.APIKEY,
+      apiSecret: config.APISECRET
     })
   },
   showBalances: async () => {
-    prices = await getPrices()
-    console.log(prices)
+    prices = await binance.prices()
     let totalBTC = 0
 
-    const allBalances = await getBalances()
+    const accountInfo = await binance.accountInfo()
+    const allBalances = accountInfo.balances
 
-    const relevantBalances = Object.keys(allBalances)
-      .reduce((acc, symbol) => {
-        const availableFunds = parseFloat(allBalances[symbol].available)
+    const relevantBalances = allBalances
+      .map(item => {
+        const symbol = item.asset
+        const availableFunds = parseFloat(item.free)
         if (availableFunds > 0) {
-          let valueInBTC = getValueInBTC(symbol, allBalances[symbol].available)
-          let valueInETH = getValueInETH(symbol, allBalances[symbol].available)
+          let valueInBTC = getValueInBTC(symbol, item.free)
+          let valueInETH = getValueInETH(symbol, valueInBTC)
           let valueInUSD = getValueInUSDT('BTC', valueInBTC)
 
           if (!isNaN(valueInBTC)) {
             totalBTC += valueInBTC
           }
 
-          acc.push({
-            symbol,
+          item = {
             valueInBTC,
             valueInETH,
             valueInUSD,
-            ...allBalances[symbol]
-          })
+            ...item
+          }
         }
-        return acc
+        return item
       }, [])
+      .filter(item => parseFloat(item.free) > 0)
       .sort((a, b) => {
         return b.valueInBTC - a.valueInBTC
       })
 
     const table = new Table({
-      head: ['Symbol', 'Balance', 'Value In BTC', 'Value in USD']
+      head: ['Symbol', 'Balance', 'In BTC', 'In USD']
     })
 
     for (const coin of relevantBalances) {
       table.push([
-        chalk.green(coin.symbol),
-        `${coin.available} ${coin.symbol}`,
+        chalk.green(coin.asset),
+        `${coin.free} ${coin.asset}`,
         `${coin.valueInBTC} Ƀ`,
         `${coin.valueInUSD} $`
       ])
@@ -86,7 +77,7 @@ module.exports = {
     table.push([
       chalk.blue('Total'),
       '',
-      `${totalBTC} Ƀ`,
+      `${totalBTC.toFixed(8)} Ƀ`,
       `${getValueInUSDT('BTC', totalBTC)} $`
     ])
     console.log(table.toString())
