@@ -1,65 +1,52 @@
-const inquirer = require('inquirer')
-const chalk = require('chalk')
-const clear = require('clear')
 const binance = require('./src/binance.js')
-const waitForInput = require('./src/utils/waitForInput.js')
-const menu = require('./src/menu.js')
-const loadedRoutes = {}
+const blessed = require('blessed')
+blessed.contrib = require('blessed-contrib')
 
 binance.init()
 
-const displayMenu = async () => {
-  let currentMenu = menu
-  let action = null
-  do {
-    currentMenu = {
-      type: 'list',
-      name: 'action',
-      ...currentMenu
-    }
-    currentMenu.message = chalk.yellow(currentMenu.message)
-    const prompt = await inquirer.prompt(currentMenu)
-    action = prompt.action.toLowerCase()
-    if (action === 'go-back') {
-      currentMenu = currentMenu.parent
-      clear()
-    } else if (action.indexOf('submenu:') >= 0) {
-      const nextMenu = currentMenu.submenus[action.substring(8)]
+// Create a screen object.
+const screen = blessed.screen({})
 
-      nextMenu.parent = currentMenu
-      currentMenu = nextMenu
+const grid = new blessed.contrib.grid({ rows: 12, cols: 12, screen }) // eslint-disable-line
 
-      const submenuLastOption =
-        currentMenu.choices[currentMenu.choices.length - 1]
-
-      if (submenuLastOption.value !== 'go-back') {
-        currentMenu.choices.push({ name: 'Go back', value: 'go-back' })
-      }
-    }
-  } while (action.indexOf('submenu:') >= 0 || action === 'go-back')
-  if (action === 'exit') return 0
-  if (action.indexOf('route:') === 0) {
-    const routeName = action.substring(6)
-    const routePath = routeName.replace('.', '/')
-    if (!loadedRoutes[routeName]) {
-      loadedRoutes[routeName] = require(`./src/routes/${routePath}.js`)
-    }
-    const routeMod = loadedRoutes[routeName]
-    if (typeof routeMod.onBeforeAppear === 'function') {
-      await routeMod.onBeforeAppear()
-    }
-    if (typeof routeMod.render === 'function') {
-      await routeMod.render()
-    } else throw new Error('Route module without "render" method: ' + routeName)
+const containerBox = grid.set(0, 0, 12, 8, blessed.box, {
+  style: {
+    bg: 'blue'
   }
-  await waitForInput('Press any key to go to the menu')
-}
+})
+const sidebarBox = grid.set(0, 8, 12, 4, blessed.layout, {
+  padding: { left: 1, right: 1 },
+  style: {}
+})
 
-const init = async () => {
-  do {
-    clear()
-  } while ((await displayMenu()) !== 0)
-  binance.destroy()
-}
+const sidebarBalanceBox = blessed.table({
+  height: 'grow',
+  width: 'grow',
+  scrollable: true,
+  align: 'left',
+  style: {
+    bg: 'red',
+    header: {
+      bg: 'blue'
+    }
+  }
+})
 
-init()
+binance.onUpdateInterval = async ({ prices, accountInfo }) => {
+  const balances = await binance.getBalances()
+  sidebarBalanceBox.setData([
+    ['SYMBOL', 'Total USD'],
+    ...balances.map(item => [
+      item.asset,
+      `${item.valueInUSD.toFixed(2).toString()} $`
+    ])
+  ])
+  screen.render()
+}
+sidebarBox.append(sidebarBalanceBox)
+
+screen.render()
+
+screen.key(['q', 'C-c'], function (ch, key) {
+  process.exit(0)
+})

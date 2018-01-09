@@ -4,6 +4,7 @@ const Table = require('cli-table2')
 const config = require('../config.json')
 
 let prices = {}
+let accountInfo = {}
 let binance = null
 
 const getValueIn = baseSymbol => (symbol, n = 1) => {
@@ -21,29 +22,31 @@ const getValueInBTC = getValueIn('BTC')
 const getValueInETH = getValueIn('ETH')
 const getValueInUSDT = getValueIn('USDT')
 
-const updatePriceData = async () => {
-  prices = await binance.prices()
-}
-
 module.exports = {
   init () {
     binance = Binance({
       apiKey: config.APIKEY,
       apiSecret: config.APISECRET
     })
-    updatePriceData()
-    this.updateInterval = setInterval(updatePriceData, 5000)
+    this.doUpdateInterval()
+    this.updateInterval = setInterval(this.doUpdateInterval, 5000)
+  },
+  async doUpdateInterval () {
+    prices = await binance.prices()
+    accountInfo = await binance.accountInfo()
+    if (typeof this.onUpdateInterval === 'function') {
+      this.onUpdateInterval({ prices, accountInfo })
+    }
   },
   destroy () {
     clearInterval(this.updateInterval)
   },
-  showBalances: async () => {
-    if (prices === null) await updatePriceData()
-    let totalBTC = 0
+  async getBalances () {
+    if (prices === null || accountInfo === null) {
+      await this.doUpdateInterval()
+    }
 
-    const accountInfo = await binance.accountInfo()
     const allBalances = accountInfo.balances
-
     const relevantBalances = allBalances
       .reduce((acc, item) => {
         const symbol = item.asset
@@ -52,10 +55,6 @@ module.exports = {
           let valueInBTC = getValueInBTC(symbol, item.free)
           let valueInETH = getValueInETH(symbol, valueInBTC)
           let valueInUSD = getValueInUSDT('BTC', valueInBTC)
-
-          if (!isNaN(valueInBTC)) {
-            totalBTC += valueInBTC
-          }
 
           acc.push({
             valueInBTC,
@@ -70,24 +69,6 @@ module.exports = {
         return b.valueInBTC - a.valueInBTC
       })
 
-    const table = new Table({
-      head: ['Symbol', 'Balance', 'In BTC', 'In USD']
-    })
-
-    for (const coin of relevantBalances) {
-      table.push([
-        chalk.green(coin.asset),
-        `${coin.free} ${coin.asset}`,
-        `${coin.valueInBTC} Ƀ`,
-        `${coin.valueInUSD} $`
-      ])
-    }
-    table.push([
-      chalk.blue('Total'),
-      '',
-      `${totalBTC.toFixed(8)} Ƀ`,
-      `${getValueInUSDT('BTC', totalBTC)} $`
-    ])
-    console.log(table.toString())
+    return relevantBalances
   }
 }
