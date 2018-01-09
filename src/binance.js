@@ -40,8 +40,11 @@ module.exports = {
   showBalances: async () => {
     if (prices === null) await updatePriceData()
     let totalBTC = 0
-
-    const accountInfo = await binance.accountInfo()
+    let totalETH = 0
+    let totalUSDB = 0
+	let totalUSDE = 0
+	
+	const accountInfo = await binance.accountInfo()
     const allBalances = accountInfo.balances
 
     const relevantBalances = allBalances
@@ -50,44 +53,64 @@ module.exports = {
         const availableFunds = parseFloat(item.free)
         if (availableFunds > 0) {
           let valueInBTC = getValueInBTC(symbol, item.free)
-          let valueInETH = getValueInETH(symbol, valueInBTC)
-          let valueInUSD = getValueInUSDT('BTC', valueInBTC)
+          let valueInETH = getValueInETH(symbol, item.free)   //correcao
+          let valueInUSDB = getValueInUSDT('BTC', valueInBTC)
+		  let valueInUSDE = getValueInUSDT('ETH', valueInETH) //verificando diferencas de lastros
 
           if (!isNaN(valueInBTC)) {
             totalBTC += valueInBTC
+          }
+		  
+		  if (!isNaN(valueInETH)) {
+            totalETH += valueInETH
+          }
+		  
+		  if (!isNaN(valueInUSDB)) {
+            totalUSDB += valueInUSDB
+          }
+		  
+		  if (!isNaN(valueInUSDE)) {
+            totalUSDE += valueInUSDE
           }
 
           acc.push({
             valueInBTC,
             valueInETH,
-            valueInUSD,
+            valueInUSDB,
+			valueInUSDE,
             ...item
           })
         }
         return acc
       }, [])
       .sort((a, b) => {
-        return b.valueInBTC - a.valueInBTC
+        return b.free - a.free
       })
 
     const table = new Table({
-      head: ['Symbol', 'Balance', 'In BTC', 'In USD']
+      head: ['Symbol', 'Balance', 'In BTC', 'In ETH', 'In USD (btc)', 'In USD (eth)']
     })
 
     for (const coin of relevantBalances) {
       table.push([
         chalk.green(coin.asset),
         `${coin.free} ${coin.asset}`,
-        `${coin.valueInBTC} Ƀ`,
-        `${coin.valueInUSD} $`
+        `${coin.valueInBTC.toFixed(8)} Ƀ`,
+		`${coin.valueInETH.toFixed(8)} E`,
+        `${coin.valueInUSDB.toFixed(2)} $`,
+		`${coin.valueInUSDE.toFixed(2)} $`
       ])
-    }
+    }	
     table.push([
-      chalk.blue('Total'),
+      chalk.yellow('Total'),
       '',
-      `${totalBTC.toFixed(8)} Ƀ`,
-      `${getValueInUSDT('BTC', totalBTC)} $`
+	  `${totalBTC.toFixed(8)} Ƀ`,
+	  `${totalETH.toFixed(8)} E`,
+      `${totalUSDB.toFixed(2)} $`,
+	  `${totalUSDE.toFixed(2)} $`
     ])
     console.log(table.toString())
   }
 }
+
+/**/
