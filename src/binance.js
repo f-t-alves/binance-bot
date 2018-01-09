@@ -1,4 +1,3 @@
-const util = require('util')
 const Binance = require('binance-api-node').default
 const chalk = require('chalk')
 const Table = require('cli-table2')
@@ -36,7 +35,7 @@ module.exports = {
     const allBalances = accountInfo.balances
 
     const relevantBalances = allBalances
-      .map(item => {
+      .reduce((acc, item) => {
         const symbol = item.asset
         const availableFunds = parseFloat(item.free)
         if (availableFunds > 0) {
@@ -48,16 +47,15 @@ module.exports = {
             totalBTC += valueInBTC
           }
 
-          item = {
+          acc.push({
             valueInBTC,
             valueInETH,
             valueInUSD,
             ...item
-          }
+          })
         }
-        return item
+        return acc
       }, [])
-      .filter(item => parseFloat(item.free) > 0)
       .sort((a, b) => {
         return b.valueInBTC - a.valueInBTC
       })
