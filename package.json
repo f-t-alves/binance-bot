@@ -24,6 +24,8 @@
   },
   "dependencies": {
     "binance-api-node": "^0.5.0",
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.8.5",
     "chalk": "^2.3.0",
     "clear": "0.0.1",
     "cli-table2": "^0.2.0",
