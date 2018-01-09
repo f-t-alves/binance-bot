@@ -21,15 +21,24 @@ const getValueInBTC = getValueIn('BTC')
 const getValueInETH = getValueIn('ETH')
 const getValueInUSDT = getValueIn('USDT')
 
+const updatePriceData = async () => {
+  prices = await binance.prices()
+}
+
 module.exports = {
   init () {
     binance = Binance({
       apiKey: config.APIKEY,
       apiSecret: config.APISECRET
     })
+    updatePriceData()
+    this.updateInterval = setInterval(updatePriceData, 5000)
+  },
+  destroy () {
+    clearInterval(this.updateInterval)
   },
   showBalances: async () => {
-    prices = await binance.prices()
+    if (prices === null) await updatePriceData()
     let totalBTC = 0
 
     const accountInfo = await binance.accountInfo()
