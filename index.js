@@ -1,4 +1,5 @@
 const inquirer = require('inquirer')
+const chalk = require('chalk')
 const clear = require('clear')
 const binance = require('./src/binance')
 const waitForInput = require('./src/utils/waitForInput')
@@ -10,7 +11,7 @@ const displayMenu = async () => {
     {
       type: 'list',
       name: 'action',
-      message: 'What you want to do?',
+      message: chalk.yellow('What you want to do?'),
       choices: [{ name: 'See balance', value: 'balance' }, 'Exit']
     }
   ])
@@ -22,10 +23,12 @@ const displayMenu = async () => {
       break
   }
   await waitForInput('Press any key to go to the menu')
-  clear()
   return 1
 }
-;(async () => {
-  clear()
-  while ((await displayMenu()) !== 0);
-})()
+
+const init = async () => {
+  do clear()
+  while ((await displayMenu()) !== 0)
+}
+
+init()

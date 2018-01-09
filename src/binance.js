@@ -20,6 +20,7 @@ const getValueIn = baseSymbol => (symbol, n = 1) => {
 const getValueInBTC = getValueIn('BTC')
 const getValueInETH = getValueIn('ETH')
 const getValueInUSDT = getValueIn('USDT')
+
 module.exports = {
   init () {
     binance = Binance({
