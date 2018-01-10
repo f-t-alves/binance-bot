@@ -1,4 +1,4 @@
-const inquirer = require('inquirer')
+import inquirer from 'inquirer'
 
-module.exports = async (msg = 'Press any key to continue') =>
+export default async (msg = 'Press any key to continue') =>
   inquirer.prompt([{ type: 'input', name: 'input', message: msg }])

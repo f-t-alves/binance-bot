@@ -1,6 +1,6 @@
-const binance = require('../../binance')
-const chalk = require('chalk')
-const Table = require('cli-table2')
+import binance from '../../binance'
+import chalk from 'chalk'
+import Table from 'cli-table2'
 
 let accountBalances = {}
 
@@ -13,7 +13,7 @@ const convertedValuesCells = obj => {
   ]
 }
 
-module.exports = {
+export default {
   async onBeforeAppear () {
     accountBalances = await binance.getBalances()
   },
@@ -42,7 +42,7 @@ module.exports = {
     // display their values together
     if (smallBalances) {
       table.push([
-        chalk.green('<0.09$'),
+        chalk.green('< 0.09$'),
         '',
         ...convertedValuesCells(smallBalances)
       ])

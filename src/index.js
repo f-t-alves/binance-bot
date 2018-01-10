@@ -1,9 +1,9 @@
-const inquirer = require('inquirer')
-const chalk = require('chalk')
-const clear = require('clear')
-const binance = require('./src/binance.js')
-const waitForInput = require('./src/utils/waitForInput.js')
-const menu = require('./src/menu.js')
+import inquirer from 'inquirer'
+import chalk from 'chalk'
+import clear from 'clear'
+import binance from './binance.js'
+import waitForInput from './utils/waitForInput.js'
+import menu from './menu.js'
 const loadedRoutes = {}
 
 binance.init()
@@ -42,7 +42,8 @@ const displayMenu = async () => {
     const routeName = action.substring(6)
     const routePath = routeName.replace('.', '/')
     if (!loadedRoutes[routeName]) {
-      loadedRoutes[routeName] = require(`./src/routes/${routePath}.js`)
+      const { default: routeModule } = await import(`./routes/${routePath}.js`)
+      loadedRoutes[routeName] = routeModule
     }
     const routeMod = loadedRoutes[routeName]
     if (typeof routeMod.onBeforeAppear === 'function') {
