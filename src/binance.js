@@ -44,7 +44,7 @@ module.exports = {
     let totalUSDB = 0
     let totalUSDE = 0
 
-	const accountInfo = await binance.accountInfo()
+    const accountInfo = await binance.accountInfo()
     const allBalances = accountInfo.balances
 
     const relevantBalances = allBalances
