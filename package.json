@@ -2,20 +2,21 @@
   "name": "binance-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "scripts": {},
+  "main": "build/binbot.js",
   "author": "",
   "license": "ISC",
-  "eslintConfig": {
-    "root": true,
-    "extends": "standard",
-    "env": {
-      "node": true,
-      "es6": true
-    }
+  "scripts": {
+    "build": "babel src -d build",
+    "watch": "babel src -d build -w",
+    "exec": "node ./build"
   },
   "devDependencies": {
-    "eslint": "^4.5.0",
+    "@babel/cli": "^7.0.0-beta.37",
+    "@babel/core": "^7.0.0-beta.37",
+    "@babel/preset-env": "^7.0.0-beta.37",
+    "babel-eslint": "^8.2.1",
+    "babel-plugin-dynamic-import-node": "^1.2.0",
+    "eslint": "^4.15.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-node": "^5.1.1",
@@ -24,8 +25,6 @@
   },
   "dependencies": {
     "binance-api-node": "^0.5.0",
-    "blessed": "^0.1.81",
-    "blessed-contrib": "^4.8.5",
     "chalk": "^2.3.0",
     "clear": "0.0.1",
     "cli-table2": "^0.2.0",

@@ -1,6 +1,6 @@
-const Binance = require('binance-api-node').default
-const config = require('../config.json')
-const objectSum = require('./utils/objectSum.js')
+import Binance from 'binance-api-node'
+import config from '../config.json'
+import objectSum from './utils/objectSum.js'
 
 let prices = {}
 let binance = null
@@ -24,7 +24,7 @@ const updatePriceData = async () => {
   prices = await binance.prices()
 }
 
-module.exports = {
+export default {
   init () {
     binance = Binance({
       apiKey: config.APIKEY,

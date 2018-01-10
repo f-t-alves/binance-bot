@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   message: 'Menu',
   choices: [{ name: 'My Account', value: 'submenu:account' }, { name: 'Exit' }],
   submenus: {

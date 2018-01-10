@@ -1,0 +1,16 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "useBuiltIns": "usage",
+        "modules": "commonjs",
+        "loose": true,
+        "shippedProposals": true,
+        "targets": { "node": "current" },
+        "debug": false
+      }
+    ]
+  ],
+  "plugins": ["dynamic-import-node"]
+}
